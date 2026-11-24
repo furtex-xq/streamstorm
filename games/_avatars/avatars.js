@@ -7,6 +7,7 @@
   var css='.thumb.ss-sq{aspect-ratio:1/1!important;height:auto!important;background:none!important;border-radius:22%!important;box-shadow:0 10px 30px rgba(124,58,237,.35)}.thumb.ss-sq::after,.thumb.ss-sq::before{display:none!important}.thumb.ss-sq img{width:100%;height:100%;object-fit:cover;display:block}'+
     '.ss-ava-h{display:inline-block;width:1.2em;height:1.2em;border-radius:.28em;vertical-align:-.18em;margin-right:.35em;box-shadow:0 0 22px rgba(168,85,247,.5),0 0 0 1px rgba(255,255,255,.15)}'+
     '.ico.ss-has-ava{background:none!important;overflow:hidden;padding:0}.ico.ss-has-ava img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}';
+  var ic=document.createElement('script');ic.src=base+'icons.js';ic.defer=true;document.head.appendChild(ic);
   var st=document.createElement('style');st.id='ss-avatars-css';st.textContent=css;document.head.appendChild(st);
   fetch(base+'list.json',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(list){
     var S={};list.forEach(function(n){S[n]=1});
