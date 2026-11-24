@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="StreamStorm Launcher: интерактивные игры для TikTok LIVE. Подарки, лайки и чат управляют игрой."><!--ss-seo--><link rel="canonical" href="https://streamstorm.fun/launcher/"><meta property="og:type" content="website"><meta property="og:site_name" content="StreamStorm"><meta property="og:title" content="StreamStorm Launcher"><meta property="og:description" content="Выбери игру, настрой подарки и страны, вставь ссылку в OBS или LIVE Studio и выходи в эфир."><meta property="og:url" content="https://streamstorm.fun/launcher/"><meta property="og:image" content="https://streamstorm.fun/games/_covers/og-cover.jpg"><meta property="og:image:width" content="1080"><meta property="og:image:height" content="1350"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://streamstorm.fun/games/_covers/og-cover.jpg"><!--/ss-seo-->
-<meta name="theme-color" content="#0a0718">
+<meta name="theme-color" content="#0b0420">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>StreamStorm Launcher</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -661,6 +661,56 @@ tbody tr:hover{background:rgba(139,92,246,.06)}
 .logo i{animation:none}
 .hero-band .mg-embers{-webkit-mask-image:linear-gradient(180deg,#000 55%,transparent);mask-image:linear-gradient(180deg,#000 55%,transparent)}
 
+/* ==========================================================================
+   VIVID LAYER (v3, 2026-11-24): Davyd asked for more saturated colors.
+   Same Ansaro style, punchier: neon rainbow, stronger aurora, tinted glass.
+   ========================================================================== */
+:root{
+  --rainbow:linear-gradient(100deg,#00e5ff,#7c4dff 32%,#ff2bd6 62%,#ffb300);
+  --navy:#0b0420; --panel:#1a0f3d; --panel-2:#26165a; --edge:#3a2580;
+  --gold:#b388ff; --gold-hi:#d1b3ff; --gold-deep:#7c4dff;
+  --emerald:#00f5a0; --sky:#00e5ff; --amber:#ffb300; --pink:#ff2bd6;
+  --stroke:rgba(190,150,255,.16); --stroke-2:rgba(210,180,255,.28);
+  --glass:rgba(140,90,255,.08); --glass-2:rgba(160,110,255,.14); --glass-3:rgba(180,130,255,.2);
+}
+html{background:#0b0420}
+html::before{opacity:.9;
+  background:radial-gradient(46vmax 46vmax at 0% 0%,rgba(124,58,255,1),transparent 70%),
+    radial-gradient(40vmax 40vmax at 100% 12%,rgba(255,20,170,.9),transparent 70%),
+    radial-gradient(44vmax 44vmax at 45% 80%,rgba(0,200,255,.75),transparent 70%),
+    radial-gradient(34vmax 34vmax at 96% 100%,rgba(255,170,0,.65),transparent 70%)}
+html::after{background-image:radial-gradient(rgba(220,200,255,.12) 1px,transparent 1px)}
+body::before{background:#0b0420}
+.card,.plan,.dl,.step,details,.mode,.tbl,.specs,.controls .gift,.urlbox,.how div,.pay-row,.net{
+  background:linear-gradient(160deg,rgba(60,28,140,.55),rgba(22,10,58,.82));border-color:var(--stroke)}
+.card:hover,.plan:hover,.step:hover,.mg-card:hover{border-color:rgba(255,43,214,.55);box-shadow:0 26px 60px -22px rgba(124,77,255,.95),0 0 0 1px rgba(255,43,214,.25)}
+.card.feature{background:linear-gradient(120deg,rgba(124,77,255,.45),rgba(255,43,214,.22) 45%,rgba(22,10,58,.85) 78%);border-color:rgba(255,43,214,.45)}
+.plan.pick{background:linear-gradient(160deg,rgba(124,77,255,.5),rgba(255,43,214,.18) 50%,rgba(22,10,58,.9));border-color:rgba(255,43,214,.6);box-shadow:0 26px 70px -22px rgba(255,43,214,.6)}
+.specs div{background:rgba(26,12,66,.9)}
+header.bar>.wrap{background:rgba(30,14,72,.62);border-color:var(--stroke-2)}
+header.bar.scrolled>.wrap{background:rgba(24,10,60,.92)}
+.btn.hot,.mg-btn.hot{box-shadow:0 14px 40px -10px rgba(255,43,214,.75),0 0 0 1px rgba(255,255,255,.15) inset}
+.btn.hot:hover,.mg-btn.hot:hover{box-shadow:0 22px 54px -12px rgba(255,43,214,.9)}
+.btn.ghost,.mg-btn.ghost,.mg-btn:not(.hot){background:rgba(140,90,255,.12);border-color:var(--stroke-2)}
+.badge{background:rgba(140,90,255,.16);border-color:rgba(180,140,255,.35);color:#e4d6ff}
+.badge.live{background:rgba(0,245,160,.16);border-color:rgba(0,245,160,.5);color:#5cffc4}
+.badge.live::before{background:#00f5a0;box-shadow:0 0 10px #00f5a0}
+.badge.gold{background:rgba(255,43,214,.16);border-color:rgba(255,43,214,.5);color:#ff9be9}
+.tag{background:rgba(140,90,255,.12);border-color:rgba(180,140,255,.3);color:#e4d6ff}
+.tag.ok{background:rgba(0,245,160,.12);border-color:rgba(0,245,160,.45);color:#7dffd0}
+.mg-pulse{background:#00f5a0!important;box-shadow:0 0 12px #00f5a0}
+.lead,.muted{color:#e2d9ff}
+.marquee-row,.marquee{background:linear-gradient(90deg,rgba(0,229,255,.08),rgba(124,77,255,.14),rgba(255,43,214,.1))}
+.stage{background:radial-gradient(50% 70% at 50% 45%,rgba(124,77,255,.4),transparent 70%),radial-gradient(40% 60% at 15% 85%,rgba(0,229,255,.3),transparent 70%),radial-gradient(40% 60% at 85% 15%,rgba(255,43,214,.32),transparent 70%),#120634}
+.phone{box-shadow:0 0 0 1px rgba(255,255,255,.14),0 40px 90px -30px rgba(0,0,0,.9),0 0 110px -10px rgba(255,43,214,.55)}
+.phone-wrap::before{background:radial-gradient(closest-side,rgba(124,77,255,.7),rgba(255,43,214,.3) 55%,transparent)}
+.mg-embers{opacity:.4;filter:hue-rotate(220deg) saturate(1.6)}
+dialog.pay{background:rgba(28,12,70,.9);border-color:var(--stroke-2)}
+.net[aria-pressed="true"]{background:rgba(255,43,214,.16);border-color:#ff2bd6;box-shadow:0 0 0 1px #ff2bd6 inset}
+.thumb:has(>img){box-shadow:0 14px 30px -12px rgba(124,77,255,.8),inset 0 0 0 1px rgba(255,255,255,.12)}
+::selection{background:rgba(255,43,214,.45)}
+.mg-molten,h1 .mg-molten,.hero h1 em.mg-molten{background-image:linear-gradient(100deg,#00e5ff,#7c4dff 25%,#ff2bd6 50%,#ffb300 75%,#00e5ff)!important;background-size:200% auto!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;animation:ss-shift 6s linear infinite}
+
 /* ===== end ss-premium ===== */
 </style>
 <style id="launcher-premium">
@@ -890,6 +940,49 @@ input[type=range]{background:linear-gradient(90deg,#8b5cf6 var(--p,50%),var(--li
 input[type=range]::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(139,92,246,.4),0 2px 8px rgba(0,0,0,.5)}
 .dot.ok{background:#34d399;box-shadow:0 0 10px #34d399}
 /* ===== end launcher-ansaro ===== */
+</style>
+<style id="launcher-vivid">
+/* ===== launcher-vivid v16: saturated launcher components (matches VIVID LAYER v3) ===== */
+:root{--basalt:#0b0420;--ash:#1a0f3d;--ash-2:#26165a;--line:#3a2580;--ok:#00f5a0;--cool:#00e5ff;--magma:#b388ff;--ember:#d1b3ff;
+  --panel-glass:linear-gradient(160deg,rgba(60,28,140,.55),rgba(22,10,58,.82));--well:rgba(14,6,40,.72);--ring:0 0 0 3px rgba(255,43,214,.35)}
+html{background:#0b0420}
+#bg{opacity:.3!important;filter:hue-rotate(220deg) saturate(1.6)}
+header.top{background:rgba(30,14,72,.62);border-color:var(--stroke-2)}
+nav[aria-label]{background:linear-gradient(160deg,rgba(60,28,140,.5),rgba(22,10,58,.8))}
+@media (max-width:760px){nav[aria-label]{background:none}}
+.step,details.step{border-color:var(--stroke)}
+.step:hover,details.step:hover{border-color:rgba(255,43,214,.5);box-shadow:0 26px 60px -24px rgba(124,77,255,.9),0 0 0 1px rgba(255,43,214,.2)}
+.step::before{background:radial-gradient(520px circle at var(--mx,50%) var(--my,0%),rgba(255,43,214,.12),transparent 60%)}
+.game:hover{background:rgba(140,90,255,.14)}
+.game[aria-current="true"]{background:linear-gradient(90deg,rgba(124,77,255,.35),rgba(255,43,214,.12))!important}
+.game[aria-current="true"] .ico,.logo{box-shadow:0 8px 22px -6px rgba(255,43,214,.8)}
+.game .ico{background:rgba(140,90,255,.16)}
+.libq,input[type=text],input[type=number],input[type=search],select{border-color:var(--stroke-2)}
+input[type=text]:focus,input[type=number]:focus,input[type=search]:focus,select:focus{border-color:#ff2bd6}
+.chip{background:rgba(140,90,255,.12);border-color:var(--stroke-2);color:#e4d6ff}
+.chip[aria-pressed="true"]{background:linear-gradient(100deg,rgba(124,77,255,.45),rgba(255,43,214,.35));border-color:#ff2bd6;color:#fff;box-shadow:0 6px 18px -8px rgba(255,43,214,.9)}
+.mode{background:rgba(26,12,66,.7)}
+.mode[aria-checked="true"]{border-color:#ff2bd6;background:linear-gradient(160deg,rgba(124,77,255,.5),rgba(255,43,214,.18) 50%,rgba(22,10,58,.9));box-shadow:0 18px 44px -18px rgba(255,43,214,.75)}
+.mode-only,.tag.beta,.price-alt b{color:#5cffc4}
+.tag.beta{background:rgba(0,245,160,.16)}
+.price-card{background:linear-gradient(120deg,rgba(124,77,255,.45),rgba(255,43,214,.22) 45%,rgba(22,10,58,.85) 80%);box-shadow:inset 0 0 0 1px rgba(255,43,214,.4)}
+.presets,.gift-tools .gi,.gi{background:rgba(140,90,255,.1)}
+.map td.coins,.coins{color:#ffb300}
+.map tbody tr:hover{background:rgba(255,43,214,.07)}
+.url output{border-color:rgba(255,43,214,.5);background:rgba(14,6,40,.8)}
+.status.ok,.lic b.ok{color:#00f5a0}.lic-dot.ok,.dot.ok{background:#00f5a0;box-shadow:0 0 10px #00f5a0}
+.live-pill{background:rgba(140,90,255,.14)}
+.tester .btns button{background:rgba(140,90,255,.12);border-color:var(--stroke-2)}
+.tester .btns button:hover{background:rgba(255,43,214,.18);border-color:#ff2bd6}
+.log{background:rgba(14,6,40,.75)}
+.log .g{color:#ffb300}.log .c{color:#00e5ff}.log .l{color:#ff7be5}
+/* stream preview (emulator) */
+.phone{box-shadow:0 0 0 1px rgba(255,255,255,.14),0 40px 90px -30px rgba(0,0,0,.9),0 0 110px -10px rgba(255,43,214,.55)}
+.phone::before{opacity:.8;background:radial-gradient(closest-side,rgba(124,77,255,.7),rgba(255,43,214,.3) 55%,transparent)}
+.phone .badge{color:#ff9be9;border-color:rgba(255,43,214,.45)}
+input[type=range]{background:linear-gradient(90deg,#7c4dff,#ff2bd6 var(--p,50%),var(--line) var(--p,50%))}
+.toast{background:rgba(28,12,70,.92);border-color:var(--stroke-2)}
+/* ===== end launcher-vivid ===== */
 </style>
 
 </head>
