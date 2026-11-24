@@ -5,7 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="StreamStorm Launcher: интерактивные игры для TikTok LIVE. Подарки, лайки и чат управляют игрой."><!--ss-seo--><link rel="canonical" href="https://streamstorm.fun/launcher/"><meta property="og:type" content="website"><meta property="og:site_name" content="StreamStorm"><meta property="og:title" content="StreamStorm Launcher"><meta property="og:description" content="Выбери игру, настрой подарки и страны, вставь ссылку в OBS или LIVE Studio и выходи в эфир."><meta property="og:url" content="https://streamstorm.fun/launcher/"><meta property="og:image" content="https://streamstorm.fun/games/_covers/og-cover.jpg"><meta property="og:image:width" content="1080"><meta property="og:image:height" content="1350"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://streamstorm.fun/games/_covers/og-cover.jpg"><!--/ss-seo-->
 <meta name="theme-color" content="#0b0420">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* ---- свой фон (ssbg) ---- */
+.bgx{border:1px solid var(--stroke-2,rgba(167,139,250,.35));border-radius:18px;padding:14px;background:linear-gradient(160deg,rgba(124,77,255,.10),rgba(255,43,214,.05) 60%,rgba(34,211,238,.06));position:relative}
+.bgx .bgx-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}.bgx .bgx-h b{font-size:15px}
+.bgx .pro{font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:999px;background:linear-gradient(100deg,#22d3ee,#8b5cf6 50%,#ec4899);color:#fff}
+.bgx fieldset{border:0;padding:0;margin:0;display:grid;gap:12px;min-width:0}
+.bgx fieldset[disabled]{opacity:.38;filter:saturate(.6);pointer-events:none}
+.bgx .bgp{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.bgx .bgp button{height:58px;border-radius:12px;border:2px solid transparent;color:#fff;font:700 12px var(--body,system-ui);display:flex;align-items:flex-end;padding:6px 8px;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.bgx .bgp button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 3px rgba(167,139,250,.45)}
+.bgx .bgrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bgx .bgrow input[type=url]{flex:1 1 220px}
+.bgx .lock{position:absolute;inset:44px 10px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;z-index:2;font-weight:700}
+.bgx .lock a{color:#f0abfc}
+.bgx .bgthumb{width:54px;height:96px;border-radius:8px;object-fit:cover;border:1px solid var(--stroke-2,rgba(255,255,255,.2))}
+</style>
 <title>StreamStorm Launcher</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1041,6 +1056,7 @@ function cached(key,game){var c=load(),r=c.res&&c.res[key];if(!r||!r.ok)return n
 var SSLicense={
   config:function(url,anon){CFG.url=String(url||"").replace(/\/+$/,"");CFG.anon=anon||""},
   normalize:norm,
+  cfg:function(){return {url:CFG.url,anon:CFG.anon}},
   saved:function(){return load().key||""},
   check:function(key,game){
     if(!key)return Promise.resolve({ok:false,reason:"no_key"});
@@ -1244,8 +1260,8 @@ const GAMES=[
    actions:[...SMB,NONE],defaults:byCoins(g=>[TIER(g.coins),g.coins])},
   {id:"car",isNew:true,path:"gift-car",group:"Все вместе",name:"Машина на подарках",icon:"🚗",
    blurb:"Весь чат везёт джип по бесконечным холмам. Подарки — это бензин, средние включают нитро, крупные турбо-реактор. Рекорд дня на экране.",
-   note:"Кооператив: весь чат вместе едет как можно дальше и бьёт рекорд дня.",round:null,likesLabel:"Лайки дают бензин",
-   actions:[...SMB,NONE],defaults:byCoins(g=>[TIER(g.coins),g.coins])},
+   note:"Кооператив: весь чат вместе едет как можно дальше и бьёт рекорд дня. Подарки-«откат» катят машину назад: так в эфире появляются вредители.",round:null,likesLabel:"Лайки дают бензин",
+   actions:[...SMB,{id:"back",name:"⏪ Откат машины назад",unit:"монет"},NONE],defaults:byCoins(g=>g.id===5269?["back",1]:[TIER(g.coins),g.coins])},
 ];
 // UA и RU никогда не играют вместе
 const noClash=list=>list.includes("UA")?list.filter(x=>x!=="RU"):list;
@@ -1296,7 +1312,7 @@ function allGifts(c){const seen=new Set(GIFTS.map(x=>String(x.id)));const out=GI
   return out.sort((a,b)=>a.coins-b.coins)}
 
 // ---------- v14: fine-tuning (difficulty, texts, colors, likes, gift cards) ----------
-function advCount(c){return [c.diff&&c.diff!=="normal",!!c.title,!!c.cta,!!c.ticker,!!c.accent,!!+c.likerate,c.fx==="lite",!!(+c.power&&+c.power!==1)].filter(Boolean).length+Object.keys(c.cx||{}).length}
+function advCount(c){return [!!(c.bg&&c.bg.mode&&c.bg.mode!=="off"),c.diff&&c.diff!=="normal",!!c.title,!!c.cta,!!c.ticker,!!c.accent,!!+c.likerate,c.fx==="lite",!!(+c.power&&+c.power!==1)].filter(Boolean).length+Object.keys(c.cx||{}).length}
 // game-specific settings: each game (PRO build) posts {type:"ss-schema",game,schema:[{k,type,v,label}],current} from the preview
 const SCHEMA={};
 function schemaOf(g){return SCHEMA[g.path]||store.get("schema:"+g.path,null)}
@@ -1322,8 +1338,56 @@ window.addEventListener("message",e=>{const d=e.data;if(!d||d.type!=="ss-schema"
   const sc=d.schema.filter(f=>f&&typeof f.k==="string").map(f=>({k:f.k,type:f.type,v:f.v,label:String(f.label||"").slice(0,80)}));
   const changed=JSON.stringify(sc)!==JSON.stringify(schemaOf(g));SCHEMA[g.path]=sc;if(changed)store.set("schema:"+g.path,sc);
   sendGiftCatalog();
+  try{const c0=cfg(g);if(c0.bg&&c0.bg.mode&&c0.bg.mode!=="off")bgSend(g,c0)}catch(_){}
   if(changed&&g.id===cur){const box=document.getElementById("cxBox");if(box){const c=cfg(g);box.innerHTML=cxUI(g,c);bindCx(g,c,()=>{saveCfg(g,c);$("#url").textContent=overlayURL(g,c)})}}});
 function advSum(c){const el=document.getElementById("advN");if(!el)return;const n=advCount(c);el.textContent=n?n+" изм.":"по умолчанию";el.classList.toggle("on",!!n)}
+const BG_PRESETS=[["aurora","Северное сияние","#0a0718,#22d3ee55,#8b5cf6,#ec4899"],["sunset","Закат","#2a0a3d,#ec4899,#ff7a45"],["ocean","Океан","#03132e,#0e7490,#22d3ee"],["neon","Неон","#07010f,#a21caf,#22d3ee"],["forest","Лес","#03140c,#14532d,#4ade80"],["candy","Конфета","#3b0a45,#f472b6,#fde68a"],["gold","Золото","#120b02,#5b3a06,#f59e0b"],["space","Космос","#000208,#0b1030,#6366f1"]];
+const BG_MODES=[["off","Как в игре"],["preset","✨ Стиль"],["color","🎨 Цвет"],["grad","🌈 Градиент"],["image","🖼 Картинка"],["video","🎬 Видео"]];
+const bgOf=c=>Object.assign({mode:"off",preset:"aurora",a:"#0a0718",b:"#6d28d9",url:"",up:0,dim:25},c.bg||{});
+const bgImgKey=g=>"bgimg:"+g.path;
+function bgLocalImg(g){try{return localStorage.getItem("ml:"+bgImgKey(g))||""}catch(e){return ""}}
+function bgOk(){return !!(lres&&lres.ok)}
+function bgUI(g,c){const b=bgOf(c),ok=bgOk(),m=b.mode;
+  const chip=(v,t)=>`<button type="button" class="chip" data-bgm="${v}" aria-pressed="${m===v}">${t}</button>`;
+  let body="";
+  if(m==="preset") body=`<div class="bgp">${BG_PRESETS.map(([id,nm,cs])=>`<button type="button" data-bgp="${id}" aria-pressed="${b.preset===id}" style="background:linear-gradient(150deg,${cs})">${nm}</button>`).join("")}</div>`;
+  if(m==="color") body=`<div class="bgrow"><label class="sw"><input type="color" id="bg_a" value="${esc(b.a)}" aria-label="Цвет фона"><span>${esc(b.a)}</span></label></div>`;
+  if(m==="grad") body=`<div class="bgrow"><label class="sw"><input type="color" id="bg_a" value="${esc(b.a)}" aria-label="Цвет сверху"><span>Сверху</span></label><label class="sw"><input type="color" id="bg_b" value="${esc(b.b)}" aria-label="Цвет снизу"><span>Снизу</span></label></div>`;
+  if(m==="image"){const li=b.up?bgLocalImg(g):"";body=`<div class="bgrow">${li?`<img class="bgthumb" src="${li}" alt="Ваш фон">`:""}<label class="btn" tabindex="0" role="button">📁 Загрузить с компьютера<input type="file" id="bg_file" accept="image/png,image/jpeg,image/webp" hidden></label>${b.up?`<button class="btn ghost" type="button" id="bg_rm">Убрать картинку</button>`:""}</div>
+    <label class="field"><span>…или ссылка на картинку <i class="opt">https://…jpg / png / webp</i></span><input type="text" inputmode="url" id="bg_url" placeholder="https://i.imgur.com/....jpg" value="${b.up?"":esc(b.url)}"></label>
+    <p class="hint" id="bg_st">${b.up?"Картинка сохранена в облаке под вашим ключом: игра в OBS подтянет её сама.":"Лучше вертикальная 1080×1920. Картинка ляжет на весь кадр, игра остаётся сверху."}</p>`}
+  if(m==="video") body=`<label class="field"><span>Ссылка на видео <i class="opt">MP4 или WebM, без звука, по кругу</i></span><input type="text" inputmode="url" id="bg_url" placeholder="https://…/background.mp4" value="${esc(b.url)}"></label><p class="hint">Видео тяжелее картинки: на слабом ПК выберите картинку. GIF в играх не двигается, сохраните его как MP4.</p>`;
+  const dim=m!=="off"?`<label class="field"><span>Затемнение фона: <b id="bg_dv">${b.dim}</b>% <i class="opt">чтобы игра читалась</i></span><input type="range" id="bg_dim" min="0" max="85" step="5" value="${b.dim}"></label>`:"";
+  return `<div class="bgx" id="bgBox"><div class="bgx-h"><b>🖼 Свой фон</b><span class="pro">ПОСЛЕ ПОКУПКИ</span></div>
+    ${ok?"":`<div class="lock"><span>🔒 Свой фон открывается после покупки ключа</span><span class="hint">Введите ключ в шаге 1 или <a href="${PUBLIC_BASE}#pricing" target="_blank" rel="noopener">купите ключ</a></span></div>`}
+    <fieldset ${ok?"":"disabled"}><div class="chips" role="group" aria-label="Фон">${BG_MODES.map(([v,t])=>chip(v,t)).join("")}</div>${body}${dim}
+    <p class="hint">Фон ложится под игру во всём кадре: в рамку, под поле и под трибуну. Персонажи, поле и интерфейс остаются сверху.</p></fieldset></div>`}
+function bgMsg(g,c){const b=bgOf(c);return {mode:b.mode,preset:b.preset,a:b.a,b:b.b,url:b.up?(bgLocalImg(g)||"cloud"):b.url,dim:b.dim}}
+function bgSend(g,c){try{$("#pv").contentWindow.postMessage({type:"ss-bg",bg:bgMsg(g,c)},"*")}catch(e){}}
+function bgRefresh(g){const box=document.getElementById("bgBox");if(!box)return;const c=cfg(g);box.outerHTML=bgUI(g,c);bindBg(g,c,()=>{saveCfg(g,c);$("#url").textContent=overlayURL(g,c)})}
+function bgCloud(g,data){const C=window.SSLicense&&SSLicense.cfg&&SSLicense.cfg();if(!C||!C.url||!lkey)return Promise.resolve({ok:false,reason:"no_key"});
+  return fetch(C.url+"/rest/v1/rpc/set_background",{method:"POST",headers:{"Content-Type":"application/json",apikey:C.anon,Authorization:"Bearer "+C.anon},body:JSON.stringify({p_key:lkey,p_game:g.path,p_data:data})})
+    .then(r=>r.ok?r.json():{ok:false,reason:r.status===404?"no_cloud":"http"}).catch(()=>({ok:false,reason:"offline"}))}
+function bgShrink(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);
+  const W=1080,H=1920,c=document.createElement("canvas");c.width=W;c.height=H;const k=c.getContext("2d"),s=Math.max(W/im.naturalWidth,H/im.naturalHeight),w=im.naturalWidth*s,h=im.naturalHeight*s;k.drawImage(im,(W-w)/2,(H-h)/2,w,h);
+  let q=.84,d=c.toDataURL("image/jpeg",q);while(d.length>1100000&&q>.45){q-=.12;d=c.toDataURL("image/jpeg",q)}res(d)};im.onerror=()=>{URL.revokeObjectURL(u);rej()};im.src=u})}
+function bindBg(g,c,upd){const box=document.getElementById("bgBox");if(!box)return;const b=()=>(c.bg=bgOf(c));
+  const apply=(re)=>{upd();bgSend(g,c);advSum(c);if(re)bgRefresh(g)};
+  box.querySelectorAll("[data-bgm]").forEach(x=>x.onclick=()=>{b().mode=x.dataset.bgm;if(x.dataset.bgm==="video"&&c.bg.up){c.bg.up=0;c.bg.url=""}apply(1)});
+  box.querySelectorAll("[data-bgp]").forEach(x=>x.onclick=()=>{b().preset=x.dataset.bgp;apply(1)});
+  const on=(id,ev,fn)=>{const el=box.querySelector("#"+id);if(el)el[ev]=fn};
+  on("bg_a","onchange",e=>{b().a=e.target.value;apply(1)});on("bg_b","onchange",e=>{b().b=e.target.value;apply(1)});
+  on("bg_dim","oninput",e=>{b().dim=+e.target.value;const v=box.querySelector("#bg_dv");if(v)v.textContent=e.target.value;clearTimeout(bindBg.t);bindBg.t=setTimeout(()=>apply(0),120)});
+  on("bg_url","onchange",e=>{const v=e.target.value.trim();if(v&&!/^https:\/\//i.test(v)){toast("Нужна ссылка, которая начинается с https://");return}b().url=v;c.bg.up=0;apply(0)});
+  on("bg_rm","onclick",()=>{b().up=0;c.bg.url="";try{localStorage.removeItem("ml:"+bgImgKey(g))}catch(e){}bgCloud(g,"");apply(1)});
+  on("bg_file","onchange",async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;if(f.size>25e6){toast("Файл слишком большой (до 25 МБ)");return}
+    let d;try{d=await bgShrink(f)}catch(_){toast("Не получилось открыть картинку");return}
+    try{localStorage.setItem("ml:"+bgImgKey(g),d)}catch(_){}
+    b().up=1;c.bg.url="";c.bg.mode="image";apply(1);bgSend(g,c);
+    const st=()=>document.getElementById("bg_st");if(st())st().textContent="⏳ Сохраняю картинку в облаке…";
+    const r=await bgCloud(g,d);
+    if(st())st().textContent=r.ok?"✅ Картинка сохранена в облаке под вашим ключом: игра в OBS подтянет её сама.":r.reason==="no_license"?"🔒 Ключ не подходит для этой игры.":r.reason==="no_cloud"?"Облако для картинок ещё не включено. В превью фон уже виден, а для OBS пока вставьте ссылку на картинку.":"Не удалось сохранить в облаке. Попробуйте ещё раз или вставьте ссылку на картинку.";
+    toast(r.ok?"🖼 Фон сохранён":"Фон виден в превью")})}
 function advUI(g,c){
   const open=store.get("advOpen",false),n=advCount(c);
   const ch=(attr,val,label,cur)=>`<button type="button" class="chip" data-${attr}="${val}" aria-pressed="${cur===val}">${label}</button>`;
@@ -1341,6 +1405,7 @@ function advUI(g,c){
         <label class="field"><span>Сила подарков</span><select id="adv_pow">${[["1","Как задумано в игре"],["0.5","×0.5 слабее"],["0.75","×0.75"],["1.5","×1.5"],["2","×2 вдвое сильнее"],["3","×3"]].map(([v,t])=>`<option value="${v}" ${String(+c.power||1)===v?"selected":""}>${t}</option>`).join("")}</select></label>
         <div class="field"><span>Цвет акцента в игре</span><div class="swatches"><label class="sw"><input type="color" id="adv_acc" value="${c.accent||"#F5C542"}" aria-label="Цвет акцента"><span>${c.accent?esc(c.accent):"Как в игре"}</span></label>${c.accent?`<button type="button" class="chip" id="adv_acc0">Вернуть как в игре</button>`:""}</div></div>
       </div>
+      ${bgUI(g,c)}
       <div class="field"><span>Параметры этой игры</span><div id="cxBox">${cxUI(g,c)}</div></div>
       <div class="row adv-foot"><p class="hint">Всё сохраняется в ссылке для OBS. Если игра какую-то настройку пока не поддерживает, она просто играет по своим правилам.</p><button class="btn ghost" id="adv_reset" type="button">Сбросить</button></div>
     </div></details>`;
@@ -1387,7 +1452,8 @@ function bindExtra(g,c,upd){
   on("adv_acc0","onclick",()=>{c.accent="";upd();renderMain()});
   on("adv_pow","onchange",e=>{c.power=+e.target.value;upd();advSum(c)});
   bindCx(g,c,upd);
-  on("adv_reset","onclick",()=>{Object.assign(c,{diff:"normal",title:"",cta:"",ticker:"",accent:"",power:1,likerate:0,fx:"all",cx:{}});saveCfg(g,c);renderMain();toast("Тонкие настройки сброшены")});
+  bindBg(g,c,upd);
+  on("adv_reset","onclick",()=>{Object.assign(c,{diff:"normal",title:"",cta:"",ticker:"",accent:"",power:1,likerate:0,fx:"all",cx:{},bg:{mode:"off"}});saveCfg(g,c);renderMain();bgSend(g,c);toast("Тонкие настройки сброшены")});
   on("adv","ontoggle",e=>store.set("advOpen",e.target.open));
   // presets
   const clone=o=>JSON.parse(JSON.stringify(o));
@@ -1437,6 +1503,8 @@ function gameParams(g,c,src){
   for(const k in (c.cx||{})) p.push(["c."+k,c.cx[k]]);
   if(+c.likerate) p.push(["likerate",c.likerate]);
   if(c.fx==="lite") p.push(["fx","lite"]);
+  if(c.bg&&c.bg.mode&&c.bg.mode!=="off"){const b=bgOf(c);p.push(["bg",b.mode]);if(b.mode==="preset")p.push(["bgp",b.preset]);if(b.mode==="color"||b.mode==="grad")p.push(["bga",b.a]);if(b.mode==="grad")p.push(["bgb",b.b]);
+    if(b.mode==="image"||b.mode==="video")p.push(["bgu",b.up&&b.mode==="image"?"cloud":b.url]);p.push(["bgd",b.dim])}
   p.push(["obs",1]);
   return p.map(([k,v])=>k+"="+encodeURIComponent(v).replace(/%2C/g,",").replace(/%3A/g,":").replace(/%21/g,"!")).join("&");
 }
@@ -1527,7 +1595,7 @@ function licText(g){
 function checkLicense(g,delay){
   clearTimeout(lTimer);lres=null;const el=document.getElementById("lstat");if(el)el.innerHTML=licText(g);
   if(!lkey||!window.SSLicense) return;
-  lTimer=setTimeout(()=>{const k=lkey;SSLicense.check(k,g.path).then(r=>{if(k!==lkey)return;lres=r;const el=document.getElementById("lstat");if(el){el.innerHTML=licText(g);el.classList.remove("pop");void el.offsetWidth;el.classList.add("pop")}})},delay||0);
+  lTimer=setTimeout(()=>{const k=lkey;SSLicense.check(k,g.path).then(r=>{if(k!==lkey)return;lres=r;try{bgRefresh(g)}catch(_){}const el=document.getElementById("lstat");if(el){el.innerHTML=licText(g);el.classList.remove("pop");void el.offsetWidth;el.classList.add("pop")}})},delay||0);
 }
 function connText(){
   if(wsState==="ok") return "● TikFinity на связи, события идут";

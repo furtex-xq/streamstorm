@@ -154,6 +154,113 @@
     const isT=t=>{ if(typeof t!=="string") return false; if(window.SS_TITLE_SRC) return t===window.SS_TITLE_SRC; const base=document.title.split(" — ")[0].replace(/[^\p{L}\p{N} ]/gu,"").trim().toUpperCase(); const tt=t.replace(/[^\p{L}\p{N} ]/gu,"").trim().toUpperCase(); if(base&&tt===base){ window.SS_TITLE_SRC=t; return true; } return false; };
     P.fillText=function(t,...a){ return ft.call(this,isT(t)?TITLE:t,...a); }; P.measureText=function(t){ return mt.call(this,isT(t)?TITLE:t); }; }
 })();
+/* ===================== StreamStorm: СВОЙ ФОН (только для купивших) =====================
+   Стример ставит свой фон в любой игре: готовый стиль, цвет, градиент, картинка или видео по ссылке,
+   либо своя картинка с компьютера (лаунчер сохраняет её в облаке под ключом, игра в OBS подтягивает по &key=).
+   Ссылка: bg=off|preset|color|grad|image|video  bgp=<стиль>  bga=#цвет1  bgb=#цвет2  bgu=<https-ссылка | cloud>  bgd=затемнение 0–85 (%)
+   Живые правки из лаунчера: postMessage {type:"ss-bg",bg:{mode,preset,a,b,url,dim}}.
+   Фон работает только с активным ключом (из &key= или сохранённым в этом браузере). Без ключа ничего не меняется.
+   Как рисуется: в кадре игры подменяются только «фоновые» заливки во всю ширину в начале кадра (небо, задник),
+   всё игровое (земля, персонажи, интерфейс) остаётся сверху. Рамка сцены и низ с трибуной берут тот же фон. */
+(function(){
+  "use strict";
+  const Q=new URLSearchParams(location.search), W=1080, H=1920;
+  const GAME=(document.currentScript&&document.currentScript.dataset.game)||"";
+  const OBS=Q.get("obs")==="1"||!!window.obsstudio;
+  // в этих играх задник запечён вместе с полем (газон, трасса, арена, склон) — свой фон идёт только в рамку сцены и на трибуну
+  const FRAME_ONLY=Q.get("bgz")==="frame"||(Q.get("bgz")!=="game"&&/^(blade-arena|duel-snow|garden-defense|help-or-hinder|horse-race)$/.test(GAME));
+  const hex=v=>/^#[0-9a-f]{3,8}$/i.test(v||"")?v:null;
+  const PRESETS={
+    aurora:{name:"Северное сияние",a:"#0a0718",b:"#1b0f3d",glow:["#22d3ee","#8b5cf6","#ec4899"]},
+    sunset:{name:"Закат",a:"#2a0a3d",b:"#ff7a45",glow:["#f59e0b","#ec4899","#8b5cf6"]},
+    ocean:{name:"Океан",a:"#03132e",b:"#0e7490",glow:["#22d3ee","#38bdf8","#a78bfa"]},
+    neon:{name:"Неон",a:"#07010f",b:"#1a0530",glow:["#f0abfc","#22d3ee","#a3e635"],grid:1},
+    forest:{name:"Лес",a:"#03140c",b:"#14532d",glow:["#4ade80","#a3e635","#22d3ee"]},
+    candy:{name:"Конфета",a:"#3b0a45",b:"#f472b6",glow:["#fde68a","#f9a8d4","#c4b5fd"]},
+    gold:{name:"Золото",a:"#120b02",b:"#5b3a06",glow:["#fde68a","#f59e0b","#fb923c"]},
+    space:{name:"Космос",a:"#000208",b:"#0b1030",glow:["#6366f1","#22d3ee","#f472b6"],stars:1}};
+  window.SS_BG_PRESETS=Object.fromEntries(Object.entries(PRESETS).map(([k,v])=>[k,v.name]));
+  let want={mode:(Q.get("bg")||"off").toLowerCase().slice(0,10),preset:(Q.get("bgp")||"aurora").slice(0,20),a:hex(Q.get("bga"))||"#0a0718",b:hex(Q.get("bgb"))||"#6d28d9",
+    url:(Q.get("bgu")||"").slice(0,2000),dim:Math.max(0,Math.min(85,parseFloat(Q.get("bgd"))||25))};
+  let licensed=false, frame=null, video=null, ver=0, cloudTried="";
+  const S=window.SS_BG={get on(){ return !!(licensed&&(S.frame||S.video)); },frame:null,ver:0,licensed:()=>licensed};
+
+  function mk(w,h){ const c=document.createElement("canvas"); c.width=w; c.height=h; return c; }
+  function cover(k,src,sw,sh){ const s=Math.max(W/sw,H/sh), w=sw*s, h=sh*s; k.drawImage(src,(W-w)/2,(H-h)/2,w,h); }
+  function dimIt(k,d){ if(d>0){ k.fillStyle=`rgba(5,6,18,${d/100})`; k.fillRect(0,0,W,H); } }
+  function paintPreset(k,p){ const g=k.createLinearGradient(0,0,W*.3,H); g.addColorStop(0,p.a); g.addColorStop(1,p.b); k.fillStyle=g; k.fillRect(0,0,W,H);
+    k.globalCompositeOperation="lighter"; p.glow.forEach((c,i)=>{ const x=[220,860,480][i], y=[420,900,1500][i], r=[620,560,700][i]; const rg=k.createRadialGradient(x,y,0,x,y,r); rg.addColorStop(0,c+"55"); rg.addColorStop(1,c+"00"); k.fillStyle=rg; k.fillRect(0,0,W,H); });
+    k.globalCompositeOperation="source-over";
+    if(p.stars||!p.grid){ let s=11; const r=()=>{ s=(s*9301+49297)%233280; return s/233280; }; for(let i=0;i<(p.stars?260:90);i++){ k.globalAlpha=.25+r()*.6; k.fillStyle="#fff"; const z=r()*2.4+.6; k.fillRect(r()*W,r()*H,z,z); } k.globalAlpha=1; }
+    if(p.grid){ k.strokeStyle="rgba(240,171,252,.22)"; k.lineWidth=2; for(let x=-W;x<=W*2;x+=90){ k.beginPath(); k.moveTo(W/2,H*.55); k.lineTo(x,H); k.stroke(); } for(let i=0;i<9;i++){ const y=H*.55+Math.pow(i/8,2)*H*.45; k.beginPath(); k.moveTo(0,y); k.lineTo(W,y); k.stroke(); } }
+    // точечная сетка в духе сайта
+    k.fillStyle="rgba(255,255,255,.05)"; for(let y=24;y<H;y+=48) for(let x=24;x<W;x+=48) k.fillRect(x,y,2,2); }
+  function done(c){ frame=c; video=null; ver++; S.frame=frame; S.video=null; S.ver=ver; }
+  function build(){
+    const m=want.mode; if(video){ try{ video.pause(); video.removeAttribute("src"); video.load(); }catch(e){} video=null; S.video=null; }
+    if(m==="off"||!m){ frame=null; S.frame=null; ver++; S.ver=ver; return; }
+    if(m==="preset"||m==="color"||m==="grad"){ const c=mk(W,H), k=c.getContext("2d");
+      if(m==="preset") paintPreset(k,PRESETS[want.preset]||PRESETS.aurora);
+      else if(m==="color"){ k.fillStyle=want.a; k.fillRect(0,0,W,H); }
+      else { const g=k.createLinearGradient(0,0,W*.35,H); g.addColorStop(0,want.a); g.addColorStop(1,want.b); k.fillStyle=g; k.fillRect(0,0,W,H); }
+      dimIt(k,m==="preset"?Math.max(0,want.dim-15):want.dim); return done(c); }
+    let url=want.url; if(!url) { frame=null; S.frame=null; ver++; S.ver=ver; return; }
+    if(url==="cloud") return cloud();
+    if(!/^(https?:|data:image\/|blob:)/i.test(url)) return;
+    if(m==="video"){ const v=document.createElement("video"); v.muted=true; v.loop=true; v.playsInline=true; v.autoplay=true; v.crossOrigin="anonymous"; v.preload="auto";
+      v.onloadeddata=()=>{ if(video!==v) return; S.video=v; ver++; S.ver=ver; frame=null; S.frame=null; }; v.onerror=()=>{ try{ v.removeAttribute("crossorigin"); }catch(e){} };
+      v.src=url; video=v; v.play().catch(()=>{}); return; }
+    const im=new Image(); im.decoding="async"; im.onload=()=>{ if(want.url!==url&&want.url!=="cloud") return; const c=mk(W,H), k=c.getContext("2d"); cover(k,im,im.naturalWidth||W,im.naturalHeight||H); dimIt(k,want.dim); done(c); }; im.src=url; }
+  // своя картинка, загруженная в лаунчере: хранится в облаке под ключом лицензии
+  function cloud(){ const key=keyNow(); if(!key||cloudTried===key) return; cloudTried=key;
+    const C=window.SSLicense&&SSLicense.cfg&&SSLicense.cfg(); if(!C||!C.url) return;
+    fetch(C.url+"/rest/v1/rpc/get_background",{method:"POST",headers:{"Content-Type":"application/json",apikey:C.anon,Authorization:"Bearer "+C.anon},body:JSON.stringify({p_key:key,p_game:GAME})})
+      .then(r=>r.ok?r.json():null).then(d=>{ if(d&&typeof d==="string"&&/^data:image\//.test(d)){ want.url=d; want.mode="image"; build(); } }).catch(()=>{}); }
+  function keyNow(){ const k=Q.get("key")||(window.SSLicense&&SSLicense.saved())||""; return k&&window.SSLicense?SSLicense.normalize(k):k; }
+  // ---- ключ: сначала кэш последней успешной проверки, потом сервер
+  function checkKey(){ const key=keyNow(); if(!key||!window.SSLicense){ licensed=false; return lockNote(); }
+    try{ const c=JSON.parse(localStorage.getItem("ss_license_v1")||"{}"), r=c.res&&c.res[key]; if(r&&r.ok&&(r.scope==="all"||r.scope===GAME)&&new Date(r.expires_at)>new Date()){ licensed=true; lockNote(); } }catch(e){}
+    if(window.SS_LICENSE&&window.SS_LICENSE.ok){ licensed=true; return lockNote(); }
+    if(licensed) return;
+    SSLicense.check(key,GAME).then(r=>{ licensed=!!(r&&r.ok); lockNote(); if(licensed&&want.url==="cloud") cloud(); }).catch(()=>{}); }
+  let note=null;
+  function lockNote(){ const need=want.mode!=="off"&&!licensed&&!OBS;
+    if(need&&!note){ note=document.createElement("div"); note.id="ss-bg-lock"; note.textContent="🔒 Свой фон работает после покупки ключа";
+      note.style.cssText="position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:9999;pointer-events:none;font:700 13px system-ui,sans-serif;color:#f5f3ff;background:rgba(14,10,36,.86);border:1px solid rgba(167,139,250,.5);border-radius:999px;padding:6px 14px";
+      document.body.appendChild(note); }
+    else if(!need&&note){ note.remove(); note=null; } }
+  addEventListener("message",e=>{ const d=e.data; if(!d||d.type!=="ss-bg"||!d.bg||typeof d.bg!=="object") return;
+    const b=d.bg; want={mode:String(b.mode||"off").slice(0,10),preset:String(b.preset||"aurora").slice(0,20),a:hex(b.a)||want.a,b:hex(b.b)||want.b,url:String(b.url||"").slice(0,3e6),dim:Math.max(0,Math.min(85,+b.dim||0))};
+    if(want.url==="cloud") cloudTried=""; if(d.key&&window.SSLicense&&!licensed){ /* лаунчер прислал ключ */ }
+    build(); lockNote(); if(!licensed) checkKey(); });
+
+  // ---- подмена фона в кадре игры: только пока кадр начинается с заливок во всю ширину
+  let FRESH=false, hooked=false;
+  function hook(ctx){ if(hooked||!ctx||FRAME_ONLY) return; hooked=true;
+    const raf=window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame=cb=>raf(t=>{ FRESH=true; cb(t); });
+    const di=ctx.drawImage, fr=ctx.fillRect;
+    // картинка: заранее переносим кадр 1080×1920 в координаты игры (с учётом масштаба сцены) и потом копируем 1:1 только ту область, что закрывала родная заливка
+    let gcv=null, gkey="";
+    function geo(){ const M=window.STAGE_MAP; if(!M) return [0,0,1]; const a=M(0,0), b=M(1,1), k=(b.x-a.x)||1; return [-a.x/k,-a.y/k,k]; }
+    function paint(x,y,w,h){ const [x0,y0,k]=geo();
+      if(video&&video.readyState>=2){ const pad=40/k, vw=video.videoWidth||W, vh=video.videoHeight||H, s=Math.max(W/vw,H/vh), vw2=vw*s, vh2=vh*s;
+        di.call(ctx,video,x0+((W-vw2)/2)/k-pad,y0+((H-vh2)/2)/k-pad,vw2/k+pad*2,vh2/k+pad*2); const f=ctx.fillStyle; ctx.fillStyle=`rgba(5,6,18,${want.dim/100})`; fr.call(ctx,x,y,w,h); ctx.fillStyle=f; return; }
+      if(!frame) return; const key=ver+"|"+x0.toFixed(1)+"|"+y0.toFixed(1)+"|"+k.toFixed(4);
+      if(key!==gkey||!gcv){ gkey=key; gcv=gcv||mk(W,H); const g=gcv.getContext("2d"); g.fillStyle="#000"; g.fillRect(0,0,W,H); g.drawImage(frame,x0-2,y0-2,W/k+4,H/k+4); }
+      const sx=Math.max(0,x), sy=Math.max(0,y), sw=Math.min(W,x+w)-sx, sh=Math.min(H,y+h)-sy; if(sw>0&&sh>0) di.call(ctx,gcv,sx,sy,sw,sh,sx,sy,sw,sh); }
+    const big=(x,y,w,h)=>x<=40&&y<=220&&w>=W*.9&&h>=880;
+    ctx.drawImage=function(img,...r){ if(FRESH){ if(S.on){ let x,y,w,h; if(r.length>=8){ x=r[4];y=r[5];w=r[6];h=r[7]; } else { x=r[0];y=r[1];w=r.length>=4?r[2]:img.width;h=r.length>=4?r[3]:img.height; }
+        if(big(x,y,w,h)){ paint(x,y,w,h); return; } } FRESH=false; } return di.call(this,img,...r); };
+    ctx.fillRect=function(x,y,w,h){ if(FRESH){ if(S.on&&big(x,y,w,h)){ paint(x,y,w,h); return; } FRESH=false; } return fr.call(this,x,y,w,h); };
+    // всё остальное, что рисует первым, закрывает «начало кадра»
+    for(const fn of ["fill","stroke","fillText","strokeText","putImageData"]){ const o=ctx[fn]; ctx[fn]=function(){ FRESH=false; return o.apply(this,arguments); }; }
+  }
+  addEventListener("DOMContentLoaded",()=>{ const cv=document.getElementById("game"); if(!cv) return;
+    if(want.mode!=="off") { build(); hook(cv.getContext("2d")); }
+    checkKey();
+    addEventListener("message",e=>{ if(e.data&&e.data.type==="ss-bg") hook(cv.getContext("2d")); }); });
+})();
 </script>
 <script id="modes" data-game="country-race">
 /* ===================== РЕЖИМЫ StreamStorm: выбор категории до эфира (?mode=) =====================
@@ -686,7 +793,10 @@ window.STAGE={cut:1125, cta:"НАПИШИ СТРАНУ В ЧАТ|🎁 1 моне
     fans.push({row,x:(i+.5+(row%2?.5:0)-(row===1?.5:0))*(W/n)+(rnd()-.5)*30, s:[.9,1.05,1.25][row], ph:rnd()*6.28, sp:2+rnd()*2.5, c:S.colors[Math.floor(rnd()*S.colors.length)], arm:rnd()<.4, stick:rnd()<.55, flag:rnd()<.16}); }
   const embers=[]; for(let i=0;i<30;i++) embers.push({x:rnd()*W,y:rnd()*AH,v:20+rnd()*45,r:1.5+rnd()*3,c:rnd()<.6?GOLD:EM,ph:rnd()*6});
   function drawArena(T,dt){
-    a.setTransform(1,0,0,1,0,0); a.drawImage(bgC,0,0); a.setTransform(AS,0,0,AS,0,0);
+    a.setTransform(1,0,0,1,0,0); { const B=window.SS_BG, src=B&&B.on?(B.video||B.frame):null;
+      if(src){ if(B.video){ const v=B.video, vw=v.videoWidth||W, vh=v.videoHeight||H, s=Math.max(W/vw,H/vh); a.drawImage(v,0,0,vw,vh,(W-vw*s)/2*AS,((H-vh*s)/2-Y0)*AS,vw*s*AS,vh*s*AS); } else a.drawImage(src,0,Y0,W,AH,0,0,W*AS,AH*AS);
+        a.fillStyle="rgba(5,6,18,.35)"; a.fillRect(0,0,W*AS,AH*AS); } else a.drawImage(bgC,0,0); }
+    a.setTransform(AS,0,0,AS,0,0);
     a.save(); a.globalCompositeOperation="lighter";
     for(let i=0;i<3;i++){ const ox=[120,CX,W-120][i], an=Math.sin(T*.6+i*2.1)*.45-Math.PI/2, len=820, wd=.16; const col=i===1?"245,197,66":"16,185,129";
       a.fillStyle=`rgba(${col},${.10+hype*.04})`; a.beginPath(); a.moveTo(ox,AH); a.lineTo(ox+Math.cos(an-wd)*len,AH+Math.sin(an-wd)*len); a.lineTo(ox+Math.cos(an+wd)*len,AH+Math.sin(an+wd)*len); a.closePath(); a.fill(); }
@@ -722,14 +832,20 @@ window.STAGE={cut:1125, cta:"НАПИШИ СТРАНУ В ЧАТ|🎁 1 моне
   buildTick(); GP.on(()=>{ buildCta(); buildTick(); });
   try{ document.fonts&&document.fonts.ready.then(()=>{ buildCta(); buildTick(); }); document.fonts&&document.fonts.addEventListener("loadingdone",()=>{ buildCta(); buildTick(); }); }catch(e){}
 
-  let last=performance.now(), T=0, fr=0, acc=0, bgT=1, lowT=1; // всё по времени, а не по номеру кадра: на 120/144 Гц скорость та же
+  let last=performance.now(), T=0, fr=0, acc=0, bgT=1, lowT=1, bgV=-1; // всё по времени, а не по номеру кадра: на 120/144 Гц скорость та же
   function step(now){
     const dt=Math.min(.05,(now-last)/1000); last=now; T+=dt; acc+=dt; hype=Math.max(0,hype-dt*.35); fr++;
     { const e=!!isEnd(); if(e!==endMode){ endMode=e; geo(); place(); fr=0; } }
     if(base.style.width!==lastW) place();
     // поля вокруг игры: продолжаем цвета краёв игрового кадра (редко — это дёшево)
     // поля вокруг игры: верх — строка фона игры (y=SRC0, над интерфейсом) один раз после старта и при смене режима; бока — статичная navy-рамка (без живых полос от баннеров)
-    if(fr===20){ gb.drawImage(base,0,SRC0,W,2,0,0,W,F0+2);
+    // свой фон стримера (ssbg): рамка вокруг игры берёт его же; видео — каждый кадр, картинка — при смене
+    { const B=window.SS_BG; if(B&&B.on){ if((B.video&&fr%2===0)||B.ver!==bgV||fr===20){ bgV=B.ver; const src=B.video||B.frame;
+        if(B.video){ const v=src, vw=v.videoWidth||W, vh=v.videoHeight||H, s=Math.max(W/vw,H/vh), ox=(W-vw*s)/2, oy=(H-vh*s)/2;
+          gb.save(); gb.beginPath(); gb.rect(0,0,W,F0+4); if(DX>0.5){ gb.rect(0,F0,DX+2,Y0-F0); gb.rect(W-DX-2,F0,DX+2,Y0-F0); } gb.clip(); gb.drawImage(v,ox,oy,vw*s,vh*s); gb.restore(); }
+        else gb.drawImage(src,0,0,W,Y0,0,0,W,Y0); } }
+      else if(bgV!==-1&&B&&!B.on){ bgV=-1; fr=19; } }
+    if(fr===20&&!(window.SS_BG&&window.SS_BG.on)){ gb.drawImage(base,0,SRC0,W,2,0,0,W,F0+2);
       if(DX>0.5){ const sg=gb.createLinearGradient(0,F0,0,Y0); sg.addColorStop(0,"#0A1428"); sg.addColorStop(1,"#050b18"); gb.fillStyle=sg; gb.fillRect(0,F0,DX+1,Y0-F0); gb.fillRect(W-DX-1,F0,DX+1,Y0-F0); } }
     // низ (арена, призыв, строка, лента) — 30 кадров/с, пиксели холста сохраняются между кадрами
     lowT+=dt; if(lowT>=1/62){ lowT=0; g.setTransform(1,0,0,1,0,-Y0);
@@ -1046,6 +1162,7 @@ function cached(key,game){var c=load(),r=c.res&&c.res[key];if(!r||!r.ok)return n
 var SSLicense={
   config:function(url,anon){CFG.url=String(url||"").replace(/\/+$/,"");CFG.anon=anon||""},
   normalize:norm,
+  cfg:function(){return {url:CFG.url,anon:CFG.anon}},
   saved:function(){return load().key||""},
   check:function(key,game){
     if(!key)return Promise.resolve({ok:false,reason:"no_key"});
