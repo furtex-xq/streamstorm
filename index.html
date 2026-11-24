@@ -395,7 +395,7 @@ dialog.pay[open]{animation:mg-enter var(--dur) var(--ease-out)}
 .pay-manual{display:grid;gap:10px}.pay-manual[hidden]{display:none}
 dialog.pay{max-height:calc(100dvh - 32px);overflow:auto}
 </style>
-<style id="ss-covers">.thumb:has(>img){aspect-ratio:4/5;background:#081226}.thumb:has(>img)::after,.thumb:has(>img)::before{display:none}.thumb>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%;transition:transform .6s var(--ease-premium,ease)}.card:hover .thumb>img{transform:scale(1.05)}</style><style id="ss-premium">
+<style id="ss-covers">.thumb:has(>img){aspect-ratio:4/5;background:#081226}.thumb:has(>img)::after,.thumb:has(>img)::before{display:none}.thumb>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%;transition:transform .6s var(--ease-premium,ease)}.card:hover .thumb>img{transform:scale(1.05)}</style><style id="ss-payback">.pay-back{display:inline-flex;align-items:center;gap:6px;margin:0 0 6px;padding:8px 14px;border-radius:999px;font:700 13.5px var(--body,inherit);color:var(--text,#fff);background:var(--glass-2,rgba(255,255,255,.08));border:1px solid var(--stroke-2,rgba(255,255,255,.2));cursor:pointer;transition:background .2s,transform .2s}.pay-back:hover{background:var(--glass-3,rgba(255,255,255,.14));transform:translateX(-2px)}.pay-check{margin:4px 0 10px;font-size:13.5px;line-height:1.45;color:#ffe08a;background:rgba(255,179,0,.1);border:1px solid rgba(255,179,0,.35);border-radius:12px;padding:9px 12px}.pay-backhint{margin-top:6px}</style><style id="ss-premium">
 /* ==========================================================================
    STREAMSTORM PREMIUM LAYER (v1, 2026-11-23)
    Spirit: Apple / Linear / Discord / Arc. Glass and blur, soft layered shadows,
@@ -1600,10 +1600,12 @@ dialog.pay{background:rgba(28,12,70,.9);border-color:var(--stroke-2)}
     <div class="pay-l">Чем платишь<div class="nets" id="pay-nets"></div>
       <details class="nets-more"><summary>Другие сети</summary><div class="nets" id="pay-nets-more"></div></details></div>
     <p class="pay-sum">К оплате: <b id="pay-price">$1.99</b> · 30 дней · <span id="pay-net-name"></span></p>
+    <p class="pay-check">🔎 Проверь, что в кошельке выбрана <b>та же сеть</b>. Перевод в другой сети потеряется. Валюту можно сменить и на следующем шаге.</p>
     <button class="btn mg-btn hot" id="pay-go" type="button">Получить реквизиты</button>
     <p class="fine" id="pay-net-note"></p>
   </div>
   <div class="pay-step" data-step="2" hidden>
+    <button type="button" class="pay-back" id="pay-back">← Сменить валюту или тариф</button>
     <h3>Переведи ровно эту сумму</h3>
     <div class="pay-row"><span id="pay-amt-l">Сумма USDT</span><b id="pay-amt" class="mono"></b><button type="button" class="btn mg-btn ghost sm" data-copy="pay-amt">Копировать</button></div>
     <div class="pay-row"><span id="pay-addr-l">Адрес (TRON, TRC20)</span><b id="pay-addr" class="mono"></b><button type="button" class="btn mg-btn ghost sm" data-copy="pay-addr">Копировать</button></div>
@@ -1612,6 +1614,7 @@ dialog.pay{background:rgba(28,12,70,.9);border-color:var(--stroke-2)}
       <label class="pay-l">Хеш транзакции (TxID) после отправки<input id="pay-tx" placeholder="Вставь хеш из кошелька" autocomplete="off"></label>
       <button class="btn mg-btn ghost" id="pay-txgo" type="button">Я оплатил, отправить хеш</button>
     </div>
+    <p class="fine pay-backhint">Ошибся с валютой или сетью? Пока ничего не отправил, нажми «← Сменить валюту» вверху. Если перевод уже ушёл, ничего не меняй: ключ появится здесь.</p>
     <p class="pay-wait" id="pay-wait"><span class="spin"></span> <span id="pay-wait-t">Ждём перевод…</span></p>
   </div>
   <div class="pay-step" data-step="3" hidden>
@@ -1788,7 +1791,7 @@ if(PAY.url&&PAY.anon){
   function chip(n){return '<button type="button" class="net" data-net="'+n.id+'" aria-pressed="false">'+n.t+'<small>'+n.c+(n.auto?' · <span class="auto">авто</span>':'')+'</small></button>'}
   $p("pay-nets").innerHTML=PAY_NETS.map(chip).join("");$p("pay-nets-more").innerHTML=PAY_MORE.map(chip).join("");
   function pickNet(n){net=n;[].forEach.call(dlg.querySelectorAll(".net"),function(b){b.setAttribute("aria-pressed",b.dataset.net===n.id)});
-    $p("pay-net-name").textContent=n.t+" · "+n.c;
+    $p("pay-net-name").textContent=n.t+" · "+n.c;$p("pay-go").textContent="Получить реквизиты · "+n.t.split(" ")[0]+" · "+n.c;
     $p("pay-net-note").textContent=n.auto?"Ключ придёт автоматически через 1–3 минуты после перевода.":"Проверяем вручную: после перевода вставь хеш транзакции, ключ появится здесь, обычно в течение нескольких часов."+(n.note?" "+n.note:"")}
   dlg.addEventListener("click",function(e){var b=e.target.closest(".net");if(b)pickNet(byId(b.dataset.net))});
   sel.onchange=function(){$p("pay-price").textContent=sel.value==="all"?"$29.99":"$1.99"};
@@ -1800,8 +1803,8 @@ if(PAY.url&&PAY.anon){
   function showOrder(o){var n=byId(o.net);
     $p("pay-addr").textContent=n.a;$p("pay-addr-l").textContent="Адрес · "+n.t+" · сеть "+n.c;
     $p("pay-manual").hidden=!!n.auto;$p("pay-tx").value=o.tx||"";
-    if(n.stable){$p("pay-amt").textContent=o.amount;$p("pay-amt-l").textContent="Сумма "+n.t.split(" ")[0];
-      $p("pay-warn").innerHTML=n.auto?"⚠️ Сумма должна прийти <b>точно до тысячных</b>: по ней мы узнаём твой платёж. Если платишь с биржи, учти её комиссию. Только USDT в сети TRON.":"⚠️ Отправляй только в сети <b>"+n.c+"</b>. Перевод в другой сети потеряется."}
+    if(n.stable){var tag=Math.max(0,+o.amount-(+o.usd));$p("pay-amt").textContent=n.auto?o.amount:(+o.usd).toFixed(2);$p("pay-amt-l").textContent="Сумма "+n.t.split(" ")[0]+(n.auto&&tag>0?" · цена $"+o.usd+" + метка "+tag.toFixed(3):"");
+      $p("pay-warn").innerHTML=n.auto?"⚠️ Сумма должна прийти <b>точно до тысячных</b>. Последние цифры — метка твоего платежа, по ней ключ приходит автоматически (это не комиссия). Если платишь с биржи, учти её комиссию. Только USDT в сети TRON.":"⚠️ Отправляй только в сети <b>"+n.c+"</b>. Перевод в другой сети потеряется."}
     else{$p("pay-amt").textContent="$"+o.usd+" в "+n.t;$p("pay-amt-l").textContent="Сумма";
       $p("pay-warn").innerHTML="⚠️ Отправь эквивалент <b>$"+o.usd+"</b> в "+n.t+" (сеть "+n.c+"). Можно чуть больше, чтобы покрыть колебание курса.";
       fetch("https://api.coingecko.com/api/v3/simple/price?ids="+n.cg+"&vs_currencies=usd").then(function(r){return r.json()}).then(function(j){var px=j[n.cg]&&j[n.cg].usd;if(px){var v=(+o.usd/px*1.01);$p("pay-amt").textContent="≈ "+(v<1?v.toPrecision(4):v.toFixed(v<100?3:1))+" "+n.t}}).catch(function(){})}
@@ -1813,7 +1816,19 @@ if(PAY.url&&PAY.anon){
   function watch(id){clearInterval(poll);var f=function(){rpc("order_status",{p_id:id}).then(function(r){
       if(r.ok&&r.status==="paid"&&r.key){clearInterval(poll);$p("pay-key").textContent=r.key;step(3);var o=lsGet();if(o){o.key=r.key;lsSet(o)}}
       else if(!r.ok){clearInterval(poll);lsSet(null);step(1)}}).catch(function(){})};f();poll=setInterval(f,8000)}
-  function open(scope){var o=lsGet();
+  var LSP="ss_order_prev",pPoll=0;
+  function prevGet(){try{return (JSON.parse(localStorage.getItem(LSP)||"[]")||[]).filter(function(p){return Date.now()-p.t<864e5})}catch(e){return []}}
+  function prevSet(a){try{a.length?localStorage.setItem(LSP,JSON.stringify(a)):localStorage.removeItem(LSP)}catch(e){}}
+  function chkPrev(){var pv=prevGet();if(!pv.length){clearInterval(pPoll);return}
+    pv.forEach(function(p){rpc("order_status",{p_id:p.id}).then(function(r){
+      if(r.ok&&r.status==="paid"&&r.key){prevSet(prevGet().filter(function(x){return x.id!==p.id}));clearInterval(poll);lsSet({id:p.id,key:r.key,scope:r.scope,t:Date.now()});$p("pay-key").textContent=r.key;if(!dlg.open)dlg.showModal();step(3)}
+      else if(!r.ok){prevSet(prevGet().filter(function(x){return x.id!==p.id}))}}).catch(function(){})})}
+  function watchPrev(){clearInterval(pPoll);if(prevGet().length){chkPrev();pPoll=setInterval(chkPrev,15000)}}
+  $p("pay-back").onclick=function(){var o=lsGet();clearInterval(poll);
+    if(o&&!o.key){var pv=prevGet().filter(function(x){return x.id!==o.id});pv.unshift({id:o.id,t:o.t});prevSet(pv.slice(0,5))}
+    lsSet(null);if(o){sel.value=o.scope;sel.onchange();pickNet(byId(o.net))}step(1);watchPrev()};
+  dlg.addEventListener("close",function(){clearInterval(pPoll)});
+  function open(scope){var o=lsGet();watchPrev();
     if(o&&!o.key&&Date.now()-o.t<3*864e5&&(!scope||scope===o.scope||scope==="pick")){dlg.showModal();showOrder(o);return}
     if(o&&o.key&&Date.now()-o.t<864e5){dlg.showModal();$p("pay-key").textContent=o.key;step(3);return}
     if(scope==="pick"){if(sel.value==="all")sel.value=PAY_GAMES[0][0]}else if(scope)sel.value=scope;sel.onchange();pickNet(net);step(1);dlg.showModal()}
