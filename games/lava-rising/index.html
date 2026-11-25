@@ -926,7 +926,7 @@ function fit(){ const s=Math.min(innerWidth/W,innerHeight/H); cv.style.width=W*s
 addEventListener("resize",fit); fit();
 buildTeams(); fillSelect(); startLobby(); if(SRC==="demo") setStatus("wait","🤖 Демо-режим (без эфира)"); else connect(); act("noop");
 let last=performance.now();
-function loop(now){ const dt=Math.min(.1,(now-last)/1000); last=now; time+=dt; update(dt); draw(); requestAnimationFrame(loop); }
+function loop(now){ const dt=Math.max(0,Math.min(.1,(now-last)/1000)); last=now; time+=dt; update(dt); draw(); requestAnimationFrame(loop); }
 requestAnimationFrame(loop);
 window.__lava={get teams(){return teams},get phase(){return phase},get lava(){return lava},handleRaw,act};
 window.addEventListener("message",e=>{ if(e.data&&e.data.source==="magma-launcher"&&e.data.event){ try{ handleRaw(e.data.event); }catch(_){} } }); // GAME-CONTRACT §6
@@ -1064,7 +1064,7 @@ window.STAGE={cut:1085, endCut:1540, cta:"НАПИШИ СТРАНУ В ЧАТ|�
 
   let last=performance.now(), T=0, fr=0, acc=0, bgT=1, lowT=1, bgV=-1; // всё по времени, а не по номеру кадра: на 120/144 Гц скорость та же
   function step(now){
-    const dt=Math.min(.05,(now-last)/1000); last=now; T+=dt; acc+=dt; hype=Math.max(0,hype-dt*.35); fr++;
+    const dt=Math.max(0,Math.min(.05,(now-last)/1000)); last=now; T+=dt; acc+=dt; hype=Math.max(0,hype-dt*.35); fr++;
     { const e=!!isEnd(); if(e!==endMode){ endMode=e; geo(); place(); fr=0; } }
     if(base.style.width!==lastW) place();
     // поля вокруг игры: продолжаем цвета краёв игрового кадра (редко — это дёшево)
@@ -1342,7 +1342,7 @@ window.GIFT_FX_TARGET=id=>{ const t=teamBy(members.get(id)); return t?{x:t.x,y:y
   function step(now){
     if(waitQ.length&&!bannerOn()) for(let n=0;n<3&&waitQ.length;n++) add(...waitQ.shift());
     if(bigQ.length&&!bannerOn()&&bigsOn()<BIGMAX()) add(...bigQ.shift());
-    const dt=Math.min(.05,(now-last)/1000); last=now;
+    const dt=Math.max(0,Math.min(.05,(now-last)/1000)); last=now;
     if(base.style.width!==lastW){ lastW=base.style.width; fx.style.width=win.style.width=base.style.width; fx.style.height=win.style.height=base.style.height; }
     gwTick(dt);
     for(const c of cards){ c.bump=Math.max(0,c.bump-dt*4); c.t+=dt;
