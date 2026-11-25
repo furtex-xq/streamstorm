@@ -900,7 +900,7 @@ window.STAGE={bigY:[580,720], cut:1060, cta:"НАПИШИ «1» ИЛИ «2»|�
     const parts=richParts(s), k0=mk(10,10).getContext("2d"); k0.font=`700 34px ${F}`; const w=Math.ceil(richW(k0,parts,34)*1.04)+40, c=mk(w,56), k=c.getContext("2d");
     richDraw(k,parts,2,29,34,"#F8FAFC",700,"left"); tick={c,w}; }
   buildTick(); GP.on(()=>{ buildCta(); buildTick(); });
-  try{ document.fonts&&document.fonts.ready.then(()=>{ buildCta(); buildTick(); }); document.fonts&&document.fonts.addEventListener("loadingdone",()=>{ buildCta(); buildTick(); }); }catch(e){}
+  window.addEventListener("ss-emoji-ready",()=>{ buildCta(); buildTick(); }); try{ document.fonts&&document.fonts.ready.then(()=>{ buildCta(); buildTick(); }); document.fonts&&document.fonts.addEventListener("loadingdone",()=>{ buildCta(); buildTick(); }); }catch(e){}
 
   let last=performance.now(), T=0, fr=0, acc=0, bgT=1, lowT=1, bgV=-1; // всё по времени, а не по номеру кадра: на 120/144 Гц скорость та же
   function step(now){
