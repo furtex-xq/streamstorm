@@ -595,7 +595,7 @@ function start(){
   addEventListener("resize",resize); resize();
   if(SRC==="demo") setStatus("wait","🤖 Демо-режим (без эфира)"); else connect();
   let last=performance.now();
-  const loop=now=>{ const dt=Math.min(.05,(now-last)/1000); last=now; time+=dt; gameUpdate(dt); if(botsOn) runBots(dt); updateFx(dt);
+  const loop=now=>{ const dt=Math.max(0,Math.min(.05,(now-last)/1000)); last=now; time+=dt; gameUpdate(dt); if(botsOn) runBots(dt); updateFx(dt);
     ctx.save(); if(shake>0) ctx.translate((Math.random()-.5)*28*shake,(Math.random()-.5)*28*shake); gameDraw(); drawFx(); ctx.restore(); gameHud(); requestAnimationFrame(loop); };
   requestAnimationFrame(loop);
 }
@@ -914,7 +914,7 @@ window.STAGE={cards:"big", bigY:[580,700], cut:1100, cta:"НАПИШИ «1» И�
 
   let last=performance.now(), T=0, fr=0, acc=0, bgT=1, lowT=1, bgV=-1; // всё по времени, а не по номеру кадра: на 120/144 Гц скорость та же
   function step(now){
-    const dt=Math.min(.05,(now-last)/1000); last=now; T+=dt; acc+=dt; hype=Math.max(0,hype-dt*.35); fr++;
+    const dt=Math.max(0,Math.min(.05,(now-last)/1000)); last=now; T+=dt; acc+=dt; hype=Math.max(0,hype-dt*.35); fr++;
     { const e=!!isEnd(); if(e!==endMode){ endMode=e; geo(); place(); fr=0; } }
     if(base.style.width!==lastW) place();
     // поля вокруг игры: продолжаем цвета краёв игрового кадра (редко — это дёшево)
@@ -1192,7 +1192,7 @@ window.GIFT_FX_TARGET=id=>{ const s=members.get(id); if(s==null) return null; re
   function step(now){
     if(waitQ.length&&!bannerOn()) for(let n=0;n<3&&waitQ.length;n++) add(...waitQ.shift());
     if(bigQ.length&&!bannerOn()&&bigsOn()<BIGMAX()) add(...bigQ.shift());
-    const dt=Math.min(.05,(now-last)/1000); last=now;
+    const dt=Math.max(0,Math.min(.05,(now-last)/1000)); last=now;
     if(base.style.width!==lastW){ lastW=base.style.width; fx.style.width=win.style.width=base.style.width; fx.style.height=win.style.height=base.style.height; }
     gwTick(dt);
     for(const c of cards){ c.bump=Math.max(0,c.bump-dt*4); c.t+=dt;
